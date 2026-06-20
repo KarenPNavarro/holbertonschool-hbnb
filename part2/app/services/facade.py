@@ -3,6 +3,7 @@ from app.persistence.repository import InMemoryRepository
 from app.models.user import User
 from app.models.amenity import Amenity
 from app.models.place import Place
+from app.models.review import Review
 
 
 class HBnBFacade:
@@ -108,6 +109,55 @@ class HBnBFacade:
                 if amenity:
                     place.add_amenity(amenity)
         simple = {k: v for k, v in data.items()
-                if k not in ('owner_id', 'amenities')}
+                  if k not in ('owner_id', 'amenities')}
         place.update(simple)
         return place
+
+    def create_review(self, review_data):
+        """Create a review, resolving its user and place."""
+        user = self.user_repo.get(review_data.get('user_id'))
+        if not user:
+            raise ValueError("User not found")
+        place = self.place_repo.get(review_data.get('place_id'))
+        if not place:
+            raise ValueError("Place not found")
+        review = Review(
+            text=review_data['text'],
+            rating=review_data['rating'],
+            place=place,
+            user=user
+        )
+        self.review_repo.add(review)
+        place.add_review(review)
+        return review
+
+    def get_review(self, review_id):
+        """Return a review by id, or None."""
+        return self.review_repo.get(review_id)
+
+    def get_all_reviews(self):
+        """Return every stored review."""
+        return self.review_repo.get_all()
+
+    def get_reviews_by_place(self, place_id):
+        """Return all reviews for a place, or None if no place."""
+        place = self.place_repo.get(place_id)
+        if not place:
+            return None
+        return place.reviews
+
+    def update_review(self, review_id, data):
+        """Update a review and return it, or None."""
+        review = self.review_repo.get(review_id)
+        if not review:
+            return None
+        review.update(data)
+        return review
+
+    def delete_review(self, review_id):
+        """Delete a review. Return True if it existed."""
+        review = self.review_repo.get(review_id)
+        if not review:
+            return False
+        self.review_repo.delete(review_id)
+        return True

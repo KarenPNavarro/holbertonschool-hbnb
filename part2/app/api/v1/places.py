@@ -31,7 +31,9 @@ def place_to_dict(place):
             'email': place.owner.email
         },
         'amenities': [{'id': a.id, 'name': a.name}
-                      for a in place.amenities]
+                      for a in place.amenities],
+        'reviews': [{'id': r.id, 'text': r.text, 'rating': r.rating}
+                    for r in place.reviews]
     }
 
 
@@ -85,3 +87,18 @@ class PlaceResource(Resource):
         if not updated:
             return {'error': 'Place not found'}, 404
         return place_to_dict(updated), 200
+
+
+@api.route('/<place_id>/reviews')
+class PlaceReviewList(Resource):
+    """Handles listing the reviews of a specific place."""
+
+    @api.response(200, 'List of reviews retrieved successfully')
+    @api.response(404, 'Place not found')
+    def get(self, place_id):
+        """Get all reviews for a place"""
+        reviews = facade.get_reviews_by_place(place_id)
+        if reviews is None:
+            return {'error': 'Place not found'}, 404
+        return [{'id': r.id, 'text': r.text, 'rating': r.rating}
+                for r in reviews], 200
