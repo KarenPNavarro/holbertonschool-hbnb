@@ -1,5 +1,6 @@
 """Place API endpoints."""
 from flask_restx import Namespace, Resource, fields
+from flask_jwt_extended import jwt_required, get_jwt_identity
 from app.services import facade
 
 api = Namespace('places', description='Place operations')
@@ -10,7 +11,6 @@ place_model = api.model('Place', {
     'price': fields.Float(required=True, description='Price per night'),
     'latitude': fields.Float(required=True, description='Latitude'),
     'longitude': fields.Float(required=True, description='Longitude'),
-    'owner_id': fields.String(required=True, description='Owner id'),
     'amenities': fields.List(fields.String, description='Amenity ids')
 })
 
@@ -42,11 +42,14 @@ class PlaceList(Resource):
     """Handles the place collection (create and list)."""
 
     @api.expect(place_model, validate=True)
+    @jwt_required()
     @api.response(201, 'Place successfully created')
     @api.response(400, 'Invalid input data')
     def post(self):
         """Register a new place"""
+        current_user_id = get_jwt_identity()
         place_data = api.payload
+        place_data['owner_id'] = current_user_id
         try:
             new_place = facade.create_place(place_data)
         except ValueError as e:
@@ -74,6 +77,7 @@ class PlaceResource(Resource):
         return place_to_dict(place), 200
 
     @api.expect(place_model, validate=True)
+    @jwt_required()
     @api.response(200, 'Place updated successfully')
     @api.response(404, 'Place not found')
     @api.response(400, 'Invalid input data')
