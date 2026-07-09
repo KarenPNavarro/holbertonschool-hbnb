@@ -1,27 +1,27 @@
-# HBnB - Part 2
+cat > README.md << 'EOF'
+# HBnB - Part 3
 
-This is a simple AirBnB-style app. It is a REST API built with Flask.
+This is the same AirBnB-style app from Part 2, but now with login and a real
+database.
 
-You can manage users, places, reviews, and amenities through the API.
+Part 2 kept everything in memory. Part 3 adds:
+- Passwords that are hashed (not saved as plain text)
+- Login with JWT tokens, so only the right user can change their stuff
+- A real database with SQLAlchemy instead of in-memory storage
 
 ## What it does
 
-There are four main things:
-- Users – people who use the app
-- Places – properties a user lists
-- Reviews – feedback a user leaves on a place
-- Amenities – features a place can have, like wifi
-
-For each one you can create it, read it, list them all, and update it.
-Reviews can also be deleted.
+Four main things: users, places, reviews, and amenities.
+You can create, read, list, and update them. Reviews can also be deleted.
+Now some actions also need you to be logged in.
 
 ## How it is built
 
-The code is split into layers:
-- `app/api/` – the API endpoints
-- `app/models/` – the classes (User, Place, Review, Amenity)
-- `app/services/` – the facade that connects the layers
-- `app/persistence/` – where the data is stored (in memory for now)
+- `app/api/` - the API endpoints
+- `app/models/` - the classes (User, Place, Review, Amenity)
+- `app/services/` - the facade that connects the layers
+- `app/persistence/` - where the data is stored
+- `config.py` - the app settings, loaded in the app factory
 
 ## How to run it
 
@@ -42,3 +42,4 @@ Then open http://127.0.0.1:5000/api/v1/ to see the API docs.
 ## Author
 
 Karen Navarro
+EOF
