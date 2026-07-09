@@ -1,12 +1,14 @@
 """Defines the User class."""
 import re
 from app.models.base_model import BaseModel
+from app.extensions import bcrypt
 
 
 class User(BaseModel):
     """Represents a person using the application."""
 
-    def __init__(self, first_name, last_name, email, is_admin=False):
+    def __init__(self, first_name, last_name, email,
+                 password=None, is_admin=False):
         """Initialize a user with validated attributes."""
         super().__init__()
         if not first_name or len(first_name) > 50:
@@ -19,9 +21,21 @@ class User(BaseModel):
         self.last_name = last_name
         self.email = email
         self.is_admin = is_admin
+        self.password = None
+        if password:
+            self.hash_password(password)
 
     @staticmethod
     def is_valid_email(email):
         """Return True if the email has a valid basic format."""
         pattern = r"^[^@\s]+@[^@\s]+\.[^@\s]+$"
         return bool(email) and re.match(pattern, email) is not None
+
+    def hash_password(self, password):
+        """Hash the password and store the hash."""
+        self.password = bcrypt.generate_password_hash(
+            password).decode('utf-8')
+
+    def verify_password(self, password):
+        """Return True if the password matches the stored hash."""
+        return bcrypt.check_password_hash(self.password, password)

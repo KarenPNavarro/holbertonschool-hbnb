@@ -7,12 +7,13 @@ api = Namespace('users', description='User operations')
 user_model = api.model('User', {
     'first_name': fields.String(required=True, description='First name'),
     'last_name': fields.String(required=True, description='Last name'),
-    'email': fields.String(required=True, description='Email')
+    'email': fields.String(required=True, description='Email'),
+    'password': fields.String(required=True, description='Password')
 })
 
 
 def user_to_dict(user):
-    """Build the response dict for a user (no password)."""
+    """Build the response dict for a user (never the password)."""
     return {
         'id': user.id,
         'first_name': user.first_name,
