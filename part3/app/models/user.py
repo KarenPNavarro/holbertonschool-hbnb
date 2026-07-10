@@ -15,6 +15,9 @@ class User(BaseModel):
     password = db.Column(db.String(128), nullable=True)
     is_admin = db.Column(db.Boolean, default=False)
 
+    places = db.relationship('Place', backref='owner', lazy=True)
+    reviews = db.relationship('Review', backref='user', lazy=True)
+
     def __init__(self, first_name, last_name, email,
                  password=None, is_admin=False):
         """Initialize a user with validated attributes."""

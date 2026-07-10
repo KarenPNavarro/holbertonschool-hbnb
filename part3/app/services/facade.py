@@ -66,14 +66,22 @@ class HBnBFacade:
         return amenity
 
     def create_place(self, place_data):
-        """Create and store a new place (no relationships yet)."""
+        """Create a place, resolving its owner and amenities."""
+        owner = self.user_repo.get(place_data.get('owner_id'))
+        if not owner:
+            raise ValueError("Owner not found")
         place = Place(
             title=place_data['title'],
             description=place_data.get('description', ''),
             price=place_data['price'],
             latitude=place_data['latitude'],
-            longitude=place_data['longitude']
+            longitude=place_data['longitude'],
+            owner=owner
         )
+        for amenity_id in place_data.get('amenities', []):
+            amenity = self.amenity_repo.get(amenity_id)
+            if amenity:
+                place.add_amenity(amenity)
         self.place_repo.add(place)
         return place
 
@@ -86,18 +94,34 @@ class HBnBFacade:
         return self.place_repo.get_all()
 
     def update_place(self, place_id, data):
-        """Update a place and return it, or None."""
+        """Update a place, re-resolving amenities if present."""
         place = self.place_repo.get(place_id)
         if not place:
             return None
-        place.update(data)
+        if 'amenities' in data:
+            place.amenities = []
+            for amenity_id in data['amenities']:
+                amenity = self.amenity_repo.get(amenity_id)
+                if amenity:
+                    place.add_amenity(amenity)
+        simple = {k: v for k, v in data.items()
+                  if k not in ('owner_id', 'amenities')}
+        place.update(simple)
         return place
 
     def create_review(self, review_data):
-        """Create and store a new review (no relationships yet)."""
+        """Create a review, resolving its user and place."""
+        user = self.user_repo.get(review_data.get('user_id'))
+        if not user:
+            raise ValueError("User not found")
+        place = self.place_repo.get(review_data.get('place_id'))
+        if not place:
+            raise ValueError("Place not found")
         review = Review(
             text=review_data['text'],
-            rating=review_data['rating']
+            rating=review_data['rating'],
+            user=user,
+            place=place
         )
         self.review_repo.add(review)
         return review
@@ -109,6 +133,13 @@ class HBnBFacade:
     def get_all_reviews(self):
         """Return every stored review."""
         return self.review_repo.get_all()
+
+    def get_reviews_by_place(self, place_id):
+        """Return all reviews for a place, or None if no place."""
+        place = self.place_repo.get(place_id)
+        if not place:
+            return None
+        return place.reviews
 
     def update_review(self, review_id, data):
         """Update a review and return it, or None."""
