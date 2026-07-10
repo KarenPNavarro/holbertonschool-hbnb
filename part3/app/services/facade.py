@@ -1,6 +1,6 @@
 """Facade coordinating the application's layers."""
 from app.persistence.repository import InMemoryRepository
-from app.persistence.sqlalchemy_repository import SQLAlchemyRepository
+from app.persistence.user_repository import UserRepository
 from app.models.user import User
 from app.models.amenity import Amenity
 from app.models.place import Place
@@ -11,8 +11,8 @@ class HBnBFacade:
     """Single entry point between the API and the business logic."""
 
     def __init__(self):
-        """Initialize repositories (user is now database-backed)."""
-        self.user_repo = SQLAlchemyRepository(User)
+        """Initialize repositories (user is database-backed)."""
+        self.user_repo = UserRepository()
         self.place_repo = InMemoryRepository()
         self.review_repo = InMemoryRepository()
         self.amenity_repo = InMemoryRepository()
@@ -29,7 +29,7 @@ class HBnBFacade:
 
     def get_user_by_email(self, email):
         """Return a user matching the email, or None."""
-        return self.user_repo.get_by_attribute('email', email)
+        return self.user_repo.get_user_by_email(email)
 
     def get_all_users(self):
         """Return every stored user."""
