@@ -1,6 +1,6 @@
 """Place API endpoints."""
 from flask_restx import Namespace, Resource, fields
-from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 from app.services import facade
 
 api = Namespace('places', description='Place operations')
@@ -82,12 +82,13 @@ class PlaceResource(Resource):
     @api.response(403, 'Unauthorized action')
     @api.response(404, 'Place not found')
     def put(self, place_id):
-        """Update a place (owner only)"""
+        """Update a place (owner or admin)"""
         current_user_id = get_jwt_identity()
+        is_admin = get_jwt().get('is_admin', False)
         place = facade.get_place(place_id)
         if not place:
             return {'error': 'Place not found'}, 404
-        if place.owner.id != current_user_id:
+        if not is_admin and place.owner.id != current_user_id:
             return {'error': 'Unauthorized action'}, 403
         try:
             updated = facade.update_place(place_id, api.payload)

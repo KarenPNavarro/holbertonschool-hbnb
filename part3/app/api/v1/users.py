@@ -1,6 +1,6 @@
 """User API endpoints."""
 from flask_restx import Namespace, Resource, fields
-from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 from app.services import facade
 
 api = Namespace('users', description='User operations')
@@ -14,7 +14,9 @@ user_model = api.model('User', {
 
 user_update_model = api.model('UserUpdate', {
     'first_name': fields.String(description='First name'),
-    'last_name': fields.String(description='Last name')
+    'last_name': fields.String(description='Last name'),
+    'email': fields.String(description='Email (admin only)'),
+    'password': fields.String(description='Password (admin only)')
 })
 
 
@@ -70,17 +72,24 @@ class UserResource(Resource):
     @api.expect(user_update_model, validate=True)
     @jwt_required()
     @api.response(200, 'User updated successfully')
-    @api.response(400, 'Cannot modify email or password')
+    @api.response(400, 'Invalid input data')
     @api.response(403, 'Unauthorized action')
     @api.response(404, 'User not found')
     def put(self, user_id):
-        """Update your own profile (not email or password)"""
+        """Update a user (self, or admin for anyone)"""
         current_user_id = get_jwt_identity()
-        if user_id != current_user_id:
-            return {'error': 'Unauthorized action'}, 403
+        is_admin = get_jwt().get('is_admin', False)
         data = api.payload
-        if 'email' in data or 'password' in data:
-            return {'error': 'You cannot modify email or password'}, 400
+        if not is_admin:
+            if user_id != current_user_id:
+                return {'error': 'Unauthorized action'}, 403
+            if 'email' in data or 'password' in data:
+                return {'error':
+                        'You cannot modify email or password'}, 400
+        if is_admin and 'email' in data:
+            existing = facade.get_user_by_email(data['email'])
+            if existing and existing.id != user_id:
+                return {'error': 'Email already registered'}, 400
         try:
             updated = facade.update_user(user_id, data)
         except ValueError as e:
