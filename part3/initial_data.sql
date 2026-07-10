@@ -8,7 +8,7 @@ VALUES (
     'Admin',
     'HBnB',
     'admin@hbnb.io',
-    '$2b$12$REPLACE_WITH_HASH_FROM_TASK_PAGE',
+    '$2b$12$WUVJJ34lZWn4dZAYCsfajOH82BSweSSaKvSdXgbWfEunKgav/Qzm.',
     TRUE
 );
 
