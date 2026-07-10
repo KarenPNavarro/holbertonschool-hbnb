@@ -1,5 +1,5 @@
 """Facade coordinating the application's layers."""
-from app.persistence.repository import InMemoryRepository
+from app.persistence.sqlalchemy_repository import SQLAlchemyRepository
 from app.persistence.user_repository import UserRepository
 from app.models.user import User
 from app.models.amenity import Amenity
@@ -11,11 +11,11 @@ class HBnBFacade:
     """Single entry point between the API and the business logic."""
 
     def __init__(self):
-        """Initialize repositories (user is database-backed)."""
+        """Initialize database-backed repositories for all entities."""
         self.user_repo = UserRepository()
-        self.place_repo = InMemoryRepository()
-        self.review_repo = InMemoryRepository()
-        self.amenity_repo = InMemoryRepository()
+        self.place_repo = SQLAlchemyRepository(Place)
+        self.review_repo = SQLAlchemyRepository(Review)
+        self.amenity_repo = SQLAlchemyRepository(Amenity)
 
     def create_user(self, user_data):
         """Create and store a new user."""
@@ -66,22 +66,14 @@ class HBnBFacade:
         return amenity
 
     def create_place(self, place_data):
-        """Create a place, resolving its owner and amenities."""
-        owner = self.user_repo.get(place_data.get('owner_id'))
-        if not owner:
-            raise ValueError("Owner not found")
+        """Create and store a new place (no relationships yet)."""
         place = Place(
             title=place_data['title'],
             description=place_data.get('description', ''),
             price=place_data['price'],
             latitude=place_data['latitude'],
-            longitude=place_data['longitude'],
-            owner=owner
+            longitude=place_data['longitude']
         )
-        for amenity_id in place_data.get('amenities', []):
-            amenity = self.amenity_repo.get(amenity_id)
-            if amenity:
-                place.add_amenity(amenity)
         self.place_repo.add(place)
         return place
 
@@ -94,42 +86,20 @@ class HBnBFacade:
         return self.place_repo.get_all()
 
     def update_place(self, place_id, data):
-        """Update a place, re-resolving owner and amenities."""
+        """Update a place and return it, or None."""
         place = self.place_repo.get(place_id)
         if not place:
             return None
-        if 'owner_id' in data:
-            owner = self.user_repo.get(data['owner_id'])
-            if not owner:
-                raise ValueError("Owner not found")
-            place.owner = owner
-        if 'amenities' in data:
-            place.amenities = []
-            for amenity_id in data['amenities']:
-                amenity = self.amenity_repo.get(amenity_id)
-                if amenity:
-                    place.add_amenity(amenity)
-        simple = {k: v for k, v in data.items()
-                  if k not in ('owner_id', 'amenities')}
-        place.update(simple)
+        place.update(data)
         return place
 
     def create_review(self, review_data):
-        """Create a review, resolving its user and place."""
-        user = self.user_repo.get(review_data.get('user_id'))
-        if not user:
-            raise ValueError("User not found")
-        place = self.place_repo.get(review_data.get('place_id'))
-        if not place:
-            raise ValueError("Place not found")
+        """Create and store a new review (no relationships yet)."""
         review = Review(
             text=review_data['text'],
-            rating=review_data['rating'],
-            place=place,
-            user=user
+            rating=review_data['rating']
         )
         self.review_repo.add(review)
-        place.add_review(review)
         return review
 
     def get_review(self, review_id):
@@ -139,13 +109,6 @@ class HBnBFacade:
     def get_all_reviews(self):
         """Return every stored review."""
         return self.review_repo.get_all()
-
-    def get_reviews_by_place(self, place_id):
-        """Return all reviews for a place, or None if no place."""
-        place = self.place_repo.get(place_id)
-        if not place:
-            return None
-        return place.reviews
 
     def update_review(self, review_id, data):
         """Update a review and return it, or None."""
