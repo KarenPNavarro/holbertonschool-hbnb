@@ -18,6 +18,7 @@ def create_app(config_class=DevelopmentConfig):
     bcrypt.init_app(app)
     jwt.init_app(app)
     db.init_app(app)
+    CORS(app, resources={r"/api/*": {"origins": "*"}})
     api = Api(app, version='1.0', title='HBnB API',
               description='HBnB Application API', doc='/api/v1/')
     api.add_namespace(users_ns, path='/api/v1/users')

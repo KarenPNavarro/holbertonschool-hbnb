@@ -7,3 +7,5 @@ venv/
 .venv/
 env/
 .env
+instance/
+*.db
